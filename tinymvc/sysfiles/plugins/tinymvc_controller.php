@@ -60,5 +60,3 @@ class TinyMVC_Controller
   }
   
 }
-
-?>

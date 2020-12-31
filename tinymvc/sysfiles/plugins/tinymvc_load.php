@@ -127,7 +127,7 @@ class TinyMVC_Load
   public function script($script_name)
   {
 
-    if(!preg_match('!^[a-zA-Z][a-zA-Z_]+$!',$script_name))
+    if(!preg_match('!^[a-zA-Z][a-zA-Z_0-9]+$!',$script_name))
       throw new Exception("Invalid script name '{$script_name}'");
     
     $filename = strtolower("TinyMVC_Script_{$script_name}.php");
@@ -135,7 +135,7 @@ class TinyMVC_Load
     try {
       require_once($filename);
     } catch (Exception $e) {
-      throw new Exception("Unknown script file '{$filename}'");      
+      throw new Exception("Unknown script file '{$filename}' {$e->getMessage()}");      
     }
       
   }
@@ -169,5 +169,3 @@ class TinyMVC_Load
   }  
   
 }
-
-?>

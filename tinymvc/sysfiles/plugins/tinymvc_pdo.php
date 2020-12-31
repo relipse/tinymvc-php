@@ -78,13 +78,16 @@ class TinyMVC_PDO
 	 */
   var $last_query_type = null;
   
+  
+  public $config = null;
+  
  	/**
 	 * class constructor
 	 *
 	 * @access	public
 	 */
   function __construct($config) {
-    
+   $this->config = $config;
    if(!class_exists('PDO',false))
      throw new Exception("PHP PDO package is required.");
      
@@ -107,7 +110,8 @@ class TinyMVC_PDO
         $dsn,
         $config['user'],
         $config['pass'],
-        array(PDO::ATTR_PERSISTENT => !empty($config['persistent']) ? true : false)
+        array(PDO::ATTR_PERSISTENT => !empty($config['persistent']) ? true : false, 
+             PDO::ATTR_DEFAULT_FETCH_MODE => $this->fetch_mode)
         );
       $this->pdo->exec("SET CHARACTER SET {$config['charset']}"); 
     } catch (PDOException $e) {
@@ -115,10 +119,25 @@ class TinyMVC_PDO
     }
     
     // make PDO handle errors with exceptions
-    $this->pdo->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);    
+    $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // PDO::ERRMODE_SILENT);  
     
   }
 
+   /**
+    * Generate an upsert statement for setting one column value
+    */
+   public function gen_upsert_sql($pkcolname, $pk, $table, $column, $val) {
+      $sql_upsert_templ = 'INSERT INTO `{TABLE}` (`{PKCOLUMN}`, `{COLUMN}`) VALUES (:pk, :value)
+                           ON DUPLICATE KEY UPDATE `{COLUMN}` = :value_dup';
+      $params = array(':pk'=>$pk, ':value'=>$val, ':value_dup'=>$val);
+      $sql = $sql_upsert_templ;
+      $sql = preg_replace('/\\{TABLE\\}/', $table, $sql);
+      $sql = preg_replace('/\\{COLUMN\\}/', $column, $sql);
+      $sql = preg_replace('/\\{PKCOLUMN\\}/', $pkcolname, $sql);
+      return array($sql, $params);
+   }
+   
+   
 	/**
 	 * select
 	 *
@@ -729,5 +748,3 @@ class TinyMVC_PDO
   }
   
 }
-
-?>

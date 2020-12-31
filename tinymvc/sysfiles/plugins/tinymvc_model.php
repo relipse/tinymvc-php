@@ -38,5 +38,3 @@ class TinyMVC_Model
   }
   
 }
-
-?>

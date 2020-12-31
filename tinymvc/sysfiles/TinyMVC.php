@@ -9,7 +9,7 @@
  ***/
 
 if(!defined('TMVC_VERSION'))
-  define('TMVC_VERSION','1.2.4-dev');
+  define('TMVC_VERSION','1.2.4.jk.0.2');
 
 /* directory separator alias */
 if(!defined('DS'))
@@ -38,6 +38,7 @@ set_include_path(get_include_path()
   . PATH_SEPARATOR . TMVC_BASEDIR . 'sysfiles' . DS . 'views' . DS
   );
 
+
 /* set .php first for speed */ 
 spl_autoload_extensions('.php,.inc');
 
@@ -62,6 +63,10 @@ class tmvc
   var $config = null;
   /* controller object */
   var $controller = null;
+  
+  /* controller name as string */
+  var $controller_name = '';
+  
   /* controller method name */
   var $action = null;
   /* server path_info */
@@ -87,6 +92,8 @@ class tmvc
    */    
   public function main()
   {
+    global $KEYVALS;
+    
     /* set initial timer */
     self::timer('tmvc_app_start');
     
@@ -116,8 +123,51 @@ class tmvc
     if($this->config['timer'])
       ob_start();
     
-    /* execute controller action */
-    $this->controller->{$this->action}();
+    $this->controller->load->library('uri');
+    
+    $args = $this->controller->uri->uri_to_array(2);
+    $KEYVALS = $this->controller->uri->uri_to_assoc(4);
+    
+    //'one_segmentskeyvals - one parameter of an array with both keyval pairs AND segments as numeric indeces
+    //'one_keyvals' - one parameter of all keyvalues, 
+    //'one_segments' - one parameter of all segments,
+    //'multiple_segments' - multiple params starting with 1st segment as first param
+
+    //use config first
+    if (!isset($this->config['controller_method_paramtype'])){
+       $this->config['controller_method_paramtype'] = false;
+    }
+    
+    $method_paramtype = $this->config['controller_method_paramtype'];
+    
+    //second, check which way the controller wants to do it, passing the action as the param
+    if (method_exists($this->controller, '_getMethodParamType')){
+       $method_paramtype = $this->controller->_getMethodParamType($this->action);
+    }
+    
+    if (empty($args) || $method_paramtype == 'none'){
+        /* execute controller action */
+        $this->controller->{$this->action}();
+    }else{
+        $params = array();
+        switch($method_paramtype){
+            case 'one_segmentskeyvals': 
+               $params[] = array_merge($args, $KEYVALS); 
+            break;
+            case 'one_keyvals':
+               $params[] = $KEYVALS;
+            break;
+            case 'one_segments':
+               $params[] = $args;
+            break;
+            //by default, just pass all segments as separate arguments to the method
+            case 'multiple_segments':
+            default:
+               $params = $args;
+            break;
+        }
+        call_user_func_array(array($this->controller, $this->action), $params);
+    }
     
     if($this->config['timer'])
     {
@@ -166,7 +216,7 @@ class tmvc
    */    
   public function setupSegments()
   {
-    $this->url_segments = !empty($this->path_info) ? array_filter(explode('/',$this->path_info)) : null;
+    $this->url_segments = !empty($this->path_info) ? array_filter(explode('/',$this->path_info),  function($var){ return ($var !== ''); }) : null;
   }
   
   /**
@@ -190,6 +240,7 @@ class tmvc
         $controller_file = "{$controller_name}.php";
       }
     }
+    $this->controller_name = $controller_name;
     
     include($controller_file);
     
@@ -289,4 +340,3 @@ class tmvc
 	
 }
  
-?>

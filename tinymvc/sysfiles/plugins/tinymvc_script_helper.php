@@ -73,5 +73,3 @@ Class TinyMVC_Script_Helper
   
 }
   
-  
-?>

@@ -92,5 +92,3 @@ class TinyMVC_ExceptionHandler extends ErrorException {
        return self::printException($e);
   }
 }
-
-?>
