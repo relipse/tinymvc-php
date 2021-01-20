@@ -26,7 +26,7 @@ class TinyMVC_ExceptionHandler extends ErrorException {
 	 *
 	 * @access	public
 	 */    
-  public static function printException(Exception $e)
+  public static function printException(Throwable $e)
   {
     switch ($e->getCode()) {
         case E_ERROR:
@@ -87,7 +87,7 @@ class TinyMVC_ExceptionHandler extends ErrorException {
 	 *
 	 * @access	public
 	 */    
-  public static function handleException(Exception $e)
+  public static function handleException(Throwable $e)
   {
        return self::printException($e);
   }
